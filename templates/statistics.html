@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ansible Statistics</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+<div class="d-flex">
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h3 class="text-center">Ansible Dashboard</h3>
+            <button class="toggle-sidebar"><i class="fas fa-bars"></i></button>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/" class="nav-item">
+                <i class="fas fa-home"></i>
+                <span>Home</span>
+            </a>
+            <a href="/playbooks" class="nav-item">
+                <i class="fas fa-scroll"></i>
+                <span>Playbooks</span>
+            </a>
+            <a href="/logs" class="nav-item">
+                <i class="fas fa-clipboard-list"></i>
+                <span>Logs</span>
+            </a>
+            <div class="nav-divider"></div>
+            <a href="/logout" class="nav-item">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </a>
+            <div class="user-info">
+                <i class="fas fa-user"></i>
+                <span>{{ current_user.username }} ({{ current_user.role }})</span>
+            </div>
+            <a href="/statistics" class="nav-item active">
+                <i class="fas fa-chart-line"></i>
+                <span>Statistics</span>
+            </a>
+        </nav>
+    </div>
+    <div class="dashboard-content">
+        <h1 class="dashboard-title">System Statistics</h1>
+        
+        <!-- Time Range and Export Controls -->
+        <div class="controls-container mb-4">
+            <div class="time-range-selector">
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-primary active" data-range="24h">24 Hours</button>
+                    <button type="button" class="btn btn-outline-primary" data-range="7d">7 Days</button>
+                    <button type="button" class="btn btn-outline-primary" data-range="30d">30 Days</button>
+                    <button type="button" class="btn btn-outline-primary" data-range="custom" data-bs-toggle="collapse" data-bs-target="#customDateRange">Custom</button>
+                </div>
+                <div class="collapse mt-3" id="customDateRange">
+                    <div class="card card-body">
+                        <div class="row g-3">
+                            <div class="col-md-5">
+                                <input type="datetime-local" class="form-control" id="startDate">
+                            </div>
+                            <div class="col-md-5">
+                                <input type="datetime-local" class="form-control" id="endDate">
+                            </div>
+                            <div class="col-md-2">
+                                <button class="btn btn-primary w-100" onclick="applyCustomRange()">Apply</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="export-controls">
+                <div class="btn-group">
+                    <button class="btn btn-success" onclick="exportData('pdf')"><i class="fas fa-file-pdf"></i> Export PDF</button>
+                    <button class="btn btn-success" onclick="exportData('csv')"><i class="fas fa-file-csv"></i> Export CSV</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Grid -->
+        <div class="charts-grid">
+            <!-- Playbook Execution Stats -->
+            <div class="chart-card">
+                <h3>Playbook Execution Statistics</h3>
+                <canvas id="playbook-stats"></canvas>
+            </div>
+
+            <!-- Server Performance -->
+            <div class="chart-card">
+                <h3>Server Performance</h3>
+                <canvas id="server-performance"></canvas>
+            </div>
+
+            <!-- Task Success Rate -->
+            <div class="chart-card">
+                <h3>Task Success Rate</h3>
+                <canvas id="task-success-rate"></canvas>
+            </div>
+
+            <!-- Error Distribution -->
+            <div class="chart-card">
+                <h3>Error Distribution</h3>
+                <canvas id="error-distribution"></canvas>
+            </div>
+        </div>
+
+        <!-- Detailed Stats Table -->
+        <div class="detailed-stats mt-4">
+            <h3>Detailed Statistics</h3>
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Metric</th>
+                        <th>Last 24h</th>
+                        <th>Last 7d</th>
+                        <th>Last 30d</th>
+                        <th>Trend</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Total Executions</td>
+                        <td>{{ stats.executions_24h }}</td>
+                        <td>{{ stats.executions_7d }}</td>
+                        <td>{{ stats.executions_30d }}</td>
+                        <td><span class="trend-up"><i class="fas fa-arrow-up"></i> 12%</span></td>
+                    </tr>
+                    <tr>
+                        <td>Success Rate</td>
+                        <td>{{ stats.success_rate_24h }}%</td>
+                        <td>{{ stats.success_rate_7d }}%</td>
+                        <td>{{ stats.success_rate_30d }}%</td>
+                        <td><span class="trend-up"><i class="fas fa-arrow-up"></i> 5%</span></td>
+                    </tr>
+                    <tr>
+                        <td>Avg. Execution Time</td>
+                        <td>{{ stats.avg_time_24h }}s</td>
+                        <td>{{ stats.avg_time_7d }}s</td>
+                        <td>{{ stats.avg_time_30d }}s</td>
+                        <td><span class="trend-down"><i class="fas fa-arrow-down"></i> 8%</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+<script>
+    // Initialize charts
+    const ctx1 = document.getElementById('playbook-stats').getContext('2d');
+    const ctx2 = document.getElementById('server-performance').getContext('2d');
+    const ctx3 = document.getElementById('task-success-rate').getContext('2d');
+    const ctx4 = document.getElementById('error-distribution').getContext('2d');
+
+    // Playbook Stats Chart
+    new Chart(ctx1, {
+        type: 'line',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            datasets: [{
+                label: 'Successful Executions',
+                data: [12, 19, 3, 5, 2, 3],
+                borderColor: '#059669',
+                tension: 0.1
+            }]
+        }
+    });
+
+    // Server Performance Chart
+    new Chart(ctx2, {
+        type: 'bar',
+        data: {
+            labels: ['Server 1', 'Server 2', 'Server 3', 'Server 4'],
+            datasets: [{
+                label: 'Response Time (ms)',
+                data: [100, 200, 150, 300],
+                backgroundColor: '#1a365d'
+            }]
+        }
+    });
+
+    // Task Success Rate Chart
+    new Chart(ctx3, {
+        type: 'doughnut',
+        data: {
+            labels: ['Success', 'Failed', 'Warning'],
+            datasets: [{
+                data: [70, 20, 10],
+                backgroundColor: ['#059669', '#dc2626', '#fbbf24']
+            }]
+        }
+    });
+
+    // Error Distribution Chart
+    new Chart(ctx4, {
+        type: 'radar',
+        data: {
+            labels: ['Network', 'Permission', 'Timeout', 'Configuration', 'Other'],
+            datasets: [{
+                label: 'Error Distribution',
+                data: [65, 59, 90, 81, 56],
+                fill: true,
+                backgroundColor: 'rgba(220, 38, 38, 0.2)',
+                borderColor: '#dc2626',
+                pointBackgroundColor: '#dc2626'
+            }]
+        }
+    });
+</script>
+</body>
+</html>

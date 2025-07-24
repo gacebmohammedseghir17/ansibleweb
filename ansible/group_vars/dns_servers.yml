@@ -1,0 +1,9 @@
+dns_zone: "thesis.local"
+dns_zone_file: "/etc/bind/db.thesis.local"
+dns_records:
+  - name: "srv-dns1"
+    type: "A"
+    value: "172.16.17.3"
+  - name: "srv-ftp"
+    type: "A"
+    value: "172.16.17.4"

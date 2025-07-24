@@ -1,0 +1,10 @@
+---
+- name: Ensure Bind9 service is running and enabled on DNS servers
+  hosts: dns_servers
+  become: true
+  tasks:
+    - name: Ensure Bind9 service is running and enabled
+      service:
+        name: bind9
+        state: started
+        enabled: yes

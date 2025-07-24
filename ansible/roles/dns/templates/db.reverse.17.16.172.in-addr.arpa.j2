@@ -1,0 +1,14 @@
+; Reverse DNS Zone File for 172.16.17.x
+$TTL    604800
+@       IN      SOA     {{ dns_zone }}. root.{{ dns_zone }}. (
+                        20250114        ; Serial
+                         604800         ; Refresh
+                          86400         ; Retry
+                        2419200         ; Expire
+                         604800 )       ; Negative Cache TTL
+;
+@       IN      NS      dns1.{{ dns_zone }}.
+
+; PTR Records
+3       IN      PTR     srv-dns1.{{ dns_zone }}.
+4       IN      PTR     srv-ftp.{{ dns_zone }}.

@@ -1,0 +1,2 @@
+dns_zone: "thesis.local"
+dns_zone_file: "/etc/bind/db.thesis.local"

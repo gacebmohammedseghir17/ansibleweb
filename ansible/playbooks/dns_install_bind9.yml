@@ -1,0 +1,11 @@
+---
+- name: Install Bind9 on DNS servers
+  hosts: dns_servers
+  become: true
+  tasks:
+    - name: Install Bind9 and Bind9-utils
+      apt:
+        name:
+          - bind9
+          - bind9-utils
+        state: present

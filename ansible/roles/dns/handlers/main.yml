@@ -1,0 +1,8 @@
+---
+# Handlers for DNS role
+
+- name: Restart Bind9
+  ansible.builtin.service:
+    name: bind9
+    state: restarted
+  become: true

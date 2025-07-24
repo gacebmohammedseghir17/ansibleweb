@@ -1,0 +1,11 @@
+---
+- name: Configure reverse DNS zone file on DNS servers
+  hosts: dns_servers
+  become: true
+  tasks:
+    - name: Configure reverse DNS zone file
+      template:
+        src: /etc/ansible/roles/dns/templates/db.reverse.17.16.172.in-addr.arpa.j2
+        dest: /etc/bind/db.reverse.17.16.172.in-addr.arpa
+      when: "'dns_servers' in group_names"
+      notify: Restart Bind9

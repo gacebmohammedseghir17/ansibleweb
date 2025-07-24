@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schedule Playbooks - Ansible Dashboard</title>
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/notifications.css') }}">
+    <noscript>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    </noscript>
+    <style>
+        .calendar-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin: 20px;
+        }
+        .fc-event {
+            cursor: pointer;
+            padding: 5px;
+            margin: 2px 0;
+            border-radius: 4px;
+        }
+        .fc-event-title {
+            font-weight: 500;
+        }
+        .schedule-form {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .schedule-form .form-group {
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+<div class="d-flex">
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h3 class="text-center logo">Ansible Dashboard</h3>
+            <div class="header-icons">
+                <button class="toggle-sidebar"><i class="fas fa-bars"></i></button>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/" class="nav-item">
+                <i class="fas fa-home"></i>
+                <span>Home</span>
+            </a>
+            <a href="/playbooks" class="nav-item">
+                <i class="fas fa-scroll"></i>
+                <span>Playbooks</span>
+            </a>
+            <a href="/logs" class="nav-item">
+                <i class="fas fa-clipboard-list"></i>
+                <span>Logs</span>
+            </a>
+            <a href="/schedule" class="nav-item active">
+                <i class="fas fa-calendar-alt"></i>
+                <span>Schedule</span>
+            </a>
+            <a href="/docs" class="nav-item">
+                <i class="fas fa-book"></i>
+                <span>Documentation</span>
+            </a>
+            <a href="/chatbot" class="nav-item">
+                <i class="fas fa-robot"></i>
+                <span>AI Chatbot</span>
+            </a>
+            <div class="nav-divider"></div>
+            <a href="/logout" class="nav-item">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </a>
+            <div class="user-info">
+                <i class="fas fa-user"></i>
+                <span>{{ current_user.username }} ({{ current_user.role }})</span>
+            </div>
+        </nav>
+    </div>
+
+    <div class="dashboard-content">
+        <div class="section-header d-flex justify-content-between align-items-center mb-4">
+            <h1 class="dashboard-title">Schedule Playbooks</h1>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#scheduleModal">
+                <i class="fas fa-plus"></i> New Schedule
+            </button>
+        </div>
+
+        <div class="calendar-container">
+            <div id="calendar"></div>
+        </div>
+
+        <!-- Schedule Modal -->
+        <div class="modal fade" id="scheduleModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Schedule Playbook</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form class="schedule-form" id="scheduleForm">
+                            <div class="form-group">
+                                <label>Playbook</label>
+                                <select class="form-select" name="playbook" required>
+                                    {% for playbook in playbooks %}
+                                    <option value="{{ playbook }}">{{ playbook }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Target Servers</label>
+                                <select class="form-select" name="servers" multiple required>
+                                    {% for server in servers %}
+                                    <option value="{{ server.name }}">{{ server.name }} ({{ server.ip }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Schedule Type</label>
+                                <select class="form-select" name="schedule_type" id="scheduleType">
+                                    <option value="once">One Time</option>
+                                    <option value="recurring">Recurring</option>
+                                </select>
+                            </div>
+                            <div id="oneTimeSchedule">
+                                <div class="form-group">
+                                    <label>Date and Time</label>
+                                    <input type="datetime-local" class="form-control" name="schedule_datetime">
+                                </div>
+                            </div>
+                            <div id="recurringSchedule" style="display: none;">
+                                <div class="form-group">
+                                    <label>Frequency</label>
+                                    <select class="form-select" name="frequency">
+                                        <option value="daily">Daily</option>
+                                        <option value="weekly">Weekly</option>
+                                        <option value="monthly">Monthly</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Time</label>
+                                    <input type="time" class="form-control" name="schedule_time">
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="saveSchedule()">Schedule</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="footer text-center py-3">FAIT PAR GACEB & BENHARIGA</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+<script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize FullCalendar
+        var calendarEl = document.getElementById('calendar');
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            events: '/api/scheduled_playbooks',
+            eventClick: function(info) {
+                // Handle event click
+                showEventDetails(info.event);
+            },
+            eventDidMount: function(info) {
+                // Add tooltip
+                const tooltip = new bootstrap.Tooltip(info.el, {
+                    title: info.event.title,
+                    placement: 'top',
+                    trigger: 'hover',
+                    container: 'body'
+                });
+            }
+        });
+        calendar.render();
+
+        // Handle schedule type change
+        document.getElementById('scheduleType').addEventListener('change', function(e) {
+            const oneTime = document.getElementById('oneTimeSchedule');
+            const recurring = document.getElementById('recurringSchedule');
+            if (e.target.value === 'once') {
+                oneTime.style.display = 'block';
+                recurring.style.display = 'none';
+            } else {
+                oneTime.style.display = 'none';
+                recurring.style.display = 'block';
+            }
+        });
+
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+
+    function saveSchedule() {
+        const form = document.getElementById('scheduleForm');
+        const formData = new FormData(form);
+        
+        fetch('/api/schedule_playbook', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Failed to schedule playbook: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while scheduling the playbook');
+        });
+    }
+
+    function showEventDetails(event) {
+        // Implement event details display
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+- name: Add cron job for log rotation
+  cron:
+    name: "Rotate logs"
+    minute: "0"
+    hour: "2"
+    job: "/usr/sbin/logrotate /etc/logrotate.conf"
+
+- name: Add cron job to check and restart bind9
+  cron:
+    name: "Check and restart bind9"
+    minute: "*/5"
+    job: "systemctl status bind9 || systemctl restart bind9"
+  when: "'dns_servers' in group_names"
+
+- name: Add cron job to check and restart vsftpd
+  cron:
+    name: "Check and restart vsftpd"
+    minute: "*/5"
+    job: "systemctl status vsftpd || systemctl restart vsftpd"
+  when: "'ftp_servers' in group_names"

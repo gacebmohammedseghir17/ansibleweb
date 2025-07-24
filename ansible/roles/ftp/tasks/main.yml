@@ -1,0 +1,27 @@
+#- name: Install vsftpd
+#  apt:
+#    name: vsftpd
+#    state: present
+
+- name: Configure vsftpd
+  template:
+    src: vsftpd.conf.j2
+    dest: /etc/vsftpd.conf
+  notify: Restart vsftpd
+
+- name: Create FTP users
+  user:
+    name: "{{ item.name }}"
+    home: "{{ item.home_dir }}"
+    password: "{{ item.password | password_hash('sha512') }}"
+    state: present
+  loop: "{{ ftp_users }}"
+
+- name: Ensure vsftpd service is running and enabled
+  service:
+    name: vsftpd
+    state: started
+    enabled: yes
+
+
+

@@ -1,0 +1,17 @@
+---
+- name: Configure log rotation on logging servers
+  hosts: logging_servers
+  become: true
+  tasks:
+    - name: Configure auth.log rotation
+      template:
+        src: /etc/ansible/roles/logging/templates/auth_logrotate.j2
+        dest: /etc/logrotate.d/auth
+    - name: Configure Bind9 log rotation
+      template:
+        src: /etc/ansible/roles/logging/templates/bind9_logrotate.j2
+        dest: /etc/logrotate.d/bind9
+    - name: Configure vsftpd log rotation
+      template:
+        src: /etc/ansible/roles/logging/templates/vsftpd_logrotate.j2
+        dest: /etc/logrotate.d/vsftpd

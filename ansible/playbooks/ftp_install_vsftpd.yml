@@ -1,0 +1,9 @@
+---
+- name: Install vsftpd on FTP servers
+  hosts: ftp_servers
+  become: true
+  tasks:
+    - name: Install vsftpd
+      apt:
+        name: vsftpd
+        state: present

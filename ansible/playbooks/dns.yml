@@ -1,0 +1,10 @@
+- name: Configure DNS Server
+  hosts: dns_servers
+  vars:
+    dns_zone: "thesis.local"
+    dns_zone_file: "/etc/bind/db.thesis.local"
+  roles:
+    - common
+    - dns
+
+

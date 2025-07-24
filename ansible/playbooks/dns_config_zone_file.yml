@@ -1,0 +1,10 @@
+---
+- name: Configure DNS zone file on DNS servers
+  hosts: dns_servers
+  become: true
+  tasks:
+    - name: Configure DNS zone file
+      template:
+        src: /etc/ansible/roles/dns/templates/named.conf.local.j2
+        dest: /etc/bind/named.conf.local
+      notify: Restart Bind9

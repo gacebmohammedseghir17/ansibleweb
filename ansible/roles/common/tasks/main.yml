@@ -1,0 +1,11 @@
+#- name: Update packages
+#   apt:
+#    update_cache: yes
+#
+#- name: Ensure essential packages are installed
+#  apt:
+#    name:
+#      - curl
+#      - git
+#      - htop
+#    state: present

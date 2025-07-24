@@ -1,0 +1,9 @@
+/var/log/named/*.log {
+    daily
+    missingok
+    rotate 7
+    compress
+    delaycompress
+    notifempty
+    create 0640 bind bind
+}

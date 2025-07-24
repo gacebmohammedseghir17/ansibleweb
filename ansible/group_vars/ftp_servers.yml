@@ -1,0 +1,7 @@
+ftp_users:
+  - name: "ftpuser1"
+    home_dir: "/home/ftpuser1"
+    password: "ftppass"
+  - name: "ftpuser2"
+    home_dir: "/home/ftpuser2"
+    password: "ftppass"

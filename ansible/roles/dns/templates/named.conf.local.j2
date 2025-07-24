@@ -1,0 +1,9 @@
+zone "{{ dns_zone }}" {
+    type master;
+    file "{{ dns_zone_file }}";
+};
+
+zone "17.16.172.in-addr.arpa" {
+    type master;
+    file "/etc/bind/db.reverse.17.16.172.in-addr.arpa";
+};

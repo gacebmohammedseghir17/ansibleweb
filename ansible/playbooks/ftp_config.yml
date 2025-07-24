@@ -1,0 +1,10 @@
+---
+- name: Configure FTP server on FTP servers
+  hosts: ftp_servers
+  become: true
+  tasks:
+    - name: Configure vsftpd
+      template:
+        src: /etc/ansible/roles/ftp/templates/vsftpd.conf.j2
+        dest: /etc/vsftpd.conf
+      notify: Restart vsftpd

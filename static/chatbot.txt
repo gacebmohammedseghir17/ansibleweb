@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepSeek - Ansible AI Chatbot</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #3a86ff;
+            --error-color: #ff4d6d;
+            --success-color: #52b788;
+            --warning-color: #ffbe0b;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8f9fa;
+        }
+        
+        .chat-container {
+            width: 100%;
+            margin: 0;
+            padding: 20px;
+            background: #fff;
+            border-radius: 0;
+            box-shadow: none;
+            min-height: 100vh;
+        }
+        
+        .chat-messages {
+            height: calc(100vh - 200px);
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            scrollbar-width: thin;
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            max-width: 85%;
+            line-height: 1.5;
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .user-message {
+            background: var(--primary-color);
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 4px;
+        }
+        
+        .bot-message {
+            background: #e2e8f0;
+            color: #1a202c;
+            border-bottom-left-radius: 4px;
+        }
+        
+        .chat-input-container {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+        
+        .chat-input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            resize: none;
+            min-height: 50px;
+            max-height: 150px;
+            font-family: inherit;
+        }
+        
+        .send-button {
+            padding: 12px 20px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            height: 50px;
+        }
+        
+        .send-button:hover {
+            background: #2a75e6;
+            transform: translateY(-1px);
+        }
+        
+        .welcome-message {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #6c757d;
+        }
+        
+        .connection-status {
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 14px;
+        }
+        
+        .disconnected {
+            background-color: #ffebee;
+            color: var(--error-color);
+            border-left: 4px solid var(--error-color);
+        }
+        
+        .connected {
+            background-color: #e8f5e9;
+            color: var(--success-color);
+            border-left: 4px solid var(--success-color);
+        }
+        
+        .retry-button {
+            background: none;
+            border: none;
+            color: var(--error-color);
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .typing-indicator {
+            display: flex;
+            padding: 12px 16px;
+            background: #e9ecef;
+            border-radius: 12px;
+            max-width: 100px;
+            margin-bottom: 15px;
+            gap: 6px;
+        }
+        
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #6c757d;
+            border-radius: 50%;
+            animation: typingAnimation 1.4s infinite ease-in-out;
+        }
+        
+        @keyframes typingAnimation {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-4px); }
+        }
+        
+        pre {
+            background: #1a1a1a;
+            color: #ffffff;
+            padding: 12px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin: 8px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        code {
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 90%;
+            color: #1a1a1a;
+        }
+        
+        .model-info {
+            font-size: 12px;
+            color: #6c757d;
+            text-align: center;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="container py-4">
+    <div class="chat-container">
+        <div class="welcome-message">
+            <h2 style="color: var(--primary-color);">Ansible AI Chatbot</h2>
+            <p>Ask me anything about Ansible automation and playbooks!</p>
+        </div>
+        
+        <div id="connectionStatus" class="connection-status disconnected">
+            <div>
+                <i class="fas fa-exclamation-circle"></i>
+                <span id="statusText">Connecting to LM Studio...</span>
+            </div>
+            <button id="retryButton" class="retry-button">
+                <i class="fas fa-sync-alt"></i> Retry
+            </button>
+        </div>
+        
+        <div class="chat-messages" id="chatMessages">
+            <div class="bot-message message">
+                Hello! I'm your Ansible AI assistant. How can I help with your automation tasks today?
+            </div>
+        </div>
+        
+        <div class="chat-input-container">
+            <textarea id="userInput" class="chat-input" placeholder="Type your message here..." rows="1"></textarea>
+            <button id="sendButton" class="send-button">
+                <span id="buttonText">Send</span>
+                <i id="buttonIcon" class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+        
+        <div class="model-info">
+            Model: deepseek-r1-distill-llama-8b | LM Studio API
+        </div>
+    </div>
+</div>
+
+<script>
+    // ================= CONFIGURATION =================
+    const CONFIG = {
+        API_BASE_URL: 'http://169.254.147.45:1234/v1',  // LM Studio API endpoint
+        MODEL_NAME: 'deepseek-r1-distill-llama-8b',
+        SYSTEM_PROMPT: 'You are an expert Ansible assistant. Provide clear, concise answers about Ansible automation, playbooks, modules, and best practices. Always format code examples properly with syntax highlighting.',
+        REQUEST_TIMEOUT: 30000,
+        MAX_RETRIES: 3,
+        BASE_DELAY: 1000,
+        CORS_HEADERS: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type'
+        }
+    };
+
+    // ================= DOM ELEMENTS =================
+    const chatMessages = document.getElementById('chatMessages');
+    const userInput = document.getElementById('userInput');
+    const sendButton = document.getElementById('sendButton');
+    const connectionStatus = document.getElementById('connectionStatus');
+    const statusText = document.getElementById('statusText');
+    const retryButton = document.getElementById('retryButton');
+    const buttonText = document.getElementById('buttonText');
+    const buttonIcon = document.getElementById('buttonIcon');
+
+    // ================= STATE MANAGEMENT =================
+    let messageHistory = [
+        { role: 'assistant', content: "Hello! I'm your Ansible AI assistant. How can I help with your automation tasks today?" }
+    ];
+    let isProcessing = false;
+    let isConnected = false;
+
+    // ================= UTILITY FUNCTIONS =================
+    function formatMessageContent(content) {
+        // Enhanced markdown formatting
+        return content
+            .replace(/```(\w*)([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
+            .replace(/`([^`]+)`/g, '<code>$1</code>')
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/^### (.*$)/gm, '<h3>$1</h3>')
+            .replace(/^## (.*$)/gm, '<h2>$1</h2>')
+            .replace(/^# (.*$)/gm, '<h1>$1</h1>')
+            .replace(/\n/g, '<br>');
+    }
+
+    function addMessage(content, isUser, isLoading = false) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+        
+        if (isLoading && !isUser) {
+            messageDiv.innerHTML = `
+                <div class="typing-indicator">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            `;
+        } else {
+            messageDiv.innerHTML = formatMessageContent(content);
+        }
+        
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        return messageDiv;
+    }
+
+    function autoResizeTextarea() {
+        userInput.style.height = 'auto';
+        userInput.style.height = (userInput.scrollHeight) + 'px';
+    }
+
+    function updateButtonState(isSending) {
+        if (isSending) {
+            sendButton.disabled = true;
+            buttonText.textContent = 'Sending';
+            buttonIcon.className = 'fas fa-spinner fa-spin';
+        } else {
+            sendButton.disabled = false;
+            buttonText.textContent = 'Send';
+            buttonIcon.className = 'fas fa-paper-plane';
+        }
+    }
+
+    function updateConnectionStatus(connected, message = '') {
+        isConnected = connected;
+        if (connected) {
+            connectionStatus.className = 'connection-status connected';
+            statusText.innerHTML = `<i class="fas fa-check-circle"></i> Connected to LM Studio`;
+            retryButton.style.display = 'none';
+        } else {
+            connectionStatus.className = 'connection-status disconnected';
+            statusText.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message || 'Cannot connect to LM Studio'}`;
+            retryButton.style.display = 'flex';
+        }
+    }
+
+    // ================= CONNECTION HANDLING =================
+    async function checkApiConnection() {
+        updateConnectionStatus(false, 'Testing connection...');
+        
+        try {
+            const response = await fetch(`${CONFIG.API_BASE_URL}/models`, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' },
+                timeout: 5000
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                const modelAvailable = data.data?.some(model => model.id === CONFIG.MODEL_NAME);
+                
+                if (modelAvailable) {
+                    updateConnectionStatus(true);
+                    return true;
+                } else {
+                    updateConnectionStatus(false, `Model ${CONFIG.MODEL_NAME} not loaded in LM Studio`);
+                    return false;
+                }
+            } else {
+                throw new Error(`HTTP ${response.status}`);
+            }
+        } catch (error) {
+            console.error("Connection check failed:", error);
+            
+            let errorMessage = 'Cannot connect to LM Studio';
+            if (error.message.includes('Failed to fetch')) {
+                errorMessage = 'Network error - check if LM Studio is running';
+            } else if (error.message.includes('timeout')) {
+                errorMessage = 'Connection timeout - check your network';
+            }
+            
+            updateConnectionStatus(false, errorMessage);
+            return false;
+        }
+    }
+
+    // ================= MESSAGE HANDLING =================
+    async function sendMessage() {
+        const message = userInput.value.trim();
+        if (!message || isProcessing) return;
+
+        // Check connection if not already connected
+        if (!isConnected) {
+            const connected = await checkApiConnection();
+            if (!connected) {
+                addMessage("Cannot send message - please check your connection to LM Studio", false);
+                return;
+            }
+        }
+
+        isProcessing = true;
+        updateButtonState(true);
+        userInput.value = '';
+        
+        // Add user message to chat and history
+        addMessage(message, true);
+        messageHistory.push({ role: 'user', content: message });
+        
+        // Add loading indicator
+        const loadingMessage = addMessage('', false, true);
+
+        let retryCount = 0;
+        let success = false;
+
+        while (retryCount < CONFIG.MAX_RETRIES && !success) {
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), CONFIG.REQUEST_TIMEOUT);
+
+                const response = await fetch(`${CONFIG.API_BASE_URL}/chat/completions`, {
+                    method: 'POST',
+                    headers: CONFIG.CORS_HEADERS,
+                    credentials: 'omit',
+                    body: JSON.stringify({
+                        messages: [
+                            { role: 'system', content: CONFIG.SYSTEM_PROMPT },
+                            ...messageHistory
+                        ],
+                        model: CONFIG.MODEL_NAME,
+                        temperature: 0.7,
+                        max_tokens: 2000,
+                        stream: false
+                    }),
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error?.message || `HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                if (data.choices?.[0]?.message) {
+                    const botMessage = data.choices[0].message;
+                    messageHistory.push(botMessage);
+                    loadingMessage.remove();
+                    addMessage(botMessage.content, false);
+                    success = true;
+                } else {
+                    throw new Error('Invalid response format');
+                }
+            } catch (error) {
+                console.error(`Attempt ${retryCount + 1} failed:`, error);
+                retryCount++;
+
+                if (retryCount === CONFIG.MAX_RETRIES) {
+                    loadingMessage.remove();
+                    addMessage(`
+                        Failed to get response after ${CONFIG.MAX_RETRIES} attempts.<br>
+                        <strong>Error:</strong> ${error.message}<br><br>
+                        Please verify:
+                        <ul>
+                            <li>LM Studio is running with API enabled</li>
+                            <li>Model <code>${CONFIG.MODEL_NAME}</code> is loaded</li>
+                            <li>API URL is correct: <code>${CONFIG.API_BASE_URL}</code></li>
+                        </ul>
+                    `, false);
+                } else {
+                    const delay = CONFIG.BASE_DELAY * Math.pow(2, retryCount - 1);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+            }
+        }
+
+        isProcessing = false;
+        updateButtonState(false);
+    }
+
+    // ================= EVENT LISTENERS =================
+    userInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+
+    userInput.addEventListener('input', function() {
+        autoResizeTextarea();
+    });
+
+    sendButton.addEventListener('click', sendMessage);
+
+    retryButton.addEventListener('click', async function() {
+        await checkApiConnection();
+    });
+
+    // ================= INITIALIZATION =================
+    document.addEventListener('DOMContentLoaded', async function() {
+        // Initial connection check
+        await checkApiConnection();
+        
+        // Focus the input field
+        userInput.focus();
+    });
+
+    // Make functions available for debugging
+    window.debug = {
+        checkApiConnection,
+        getConfig: () => CONFIG,
+        getState: () => ({ isConnected, messageHistory })
+    };
+</script>
+</body>
+</html>

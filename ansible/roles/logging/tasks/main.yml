@@ -1,0 +1,50 @@
+- name: Ensure logrotate is installed
+  when: false
+  apt:
+    name: logrotate
+    state: present
+
+- name: Configure log rotation for auth.log
+  template:
+    src: auth_logrotate.j2
+    dest: /etc/logrotate.d/auth
+
+- name: Configure log rotation for bind9 logs
+  template:
+    src: bind9_logrotate.j2
+    dest: /etc/logrotate.d/bind9
+  when: "'dns_servers' in group_names"
+
+- name: Configure log rotation for vsftpd logs
+  template:
+    src: vsftpd_logrotate.j2
+    dest: /etc/logrotate.d/vsftpd
+  when: "'ftp_servers' in group_names"
+
+- name: Create errors.log file
+  file:
+    path: /var/log/errors.log
+    state: touch
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Monitor auth.log for failed logins and log errors
+  cron:
+    name: "Monitor failed logins"
+    minute: "*/10"
+    job: "grep 'Failed password' /var/log/auth.log >> /var/log/errors.log 2>&1"
+
+- name: Monitor bind9 logs for errors
+  cron:
+    name: "Monitor bind9 errors"
+    minute: "*/15"
+    job: "grep -i 'error' /var/log/named/*.log >> /var/log/errors.log 2>&1"
+  when: "'dns_servers' in group_names"
+
+- name: Monitor vsftpd logs for errors
+  cron:
+    name: "Monitor vsftpd errors"
+    minute: "*/15"
+    job: "grep -i 'error' /var/log/vsftpd.log >> /var/log/errors.log 2>&1"
+  when: "'ftp_servers' in group_names"

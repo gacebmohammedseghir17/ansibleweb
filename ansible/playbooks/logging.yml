@@ -1,0 +1,4 @@
+- name: Configure logging
+  hosts: all
+  roles:
+    - logging

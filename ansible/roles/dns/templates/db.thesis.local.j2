@@ -1,0 +1,16 @@
+{# Get today's date in YYYYMMDD format #}
+{% set today = ansible_date_time.date.replace('-', '') %}
+{# You can use today's date as the base of the serial number and append a version increment, for example, 01 #}
+{% set serial = today + '01' %}
+
+$TTL    604800
+@       IN      SOA     {{ dns_zone }}. root.{{ dns_zone }}. (
+                        {{ serial }}        ; Serial (dynamic, based on the date)
+                         604800             ; Refresh
+                         86400              ; Retry
+                        2419200             ; Expire
+                         604800 )           ; Negative Cache TTL
+;
+@       IN      NS      srv-dns1.{{ dns_zone }}.
+srv-dns1        IN      A       172.16.17.3
+srv-ftp         IN      A       172.16.17.4

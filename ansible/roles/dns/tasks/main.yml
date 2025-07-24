@@ -1,0 +1,40 @@
+#- name: Install Bind9 and Bind9-utils
+#  apt:
+#    name:
+#      - bind9
+#      - bind9-utils
+#    state: present
+# Load DNS variables from vars/main.yml
+- name: Load DNS variables
+  include_vars:
+    file: vars/main.yml  # This loads the variables defined in the vars/main.yml file
+
+# Configure DNS zone file using a template
+- name: Configure DNS zone file
+  template:
+    src: named.conf.local.j2
+    dest: /etc/bind/named.conf.local
+  notify: Restart Bind9
+
+# Configure DNS records using a template
+- name: Configure DNS records
+  template:
+    src: db.thesis.local.j2
+    dest: "{{ dns_zone_file }}"  # Using the dns_zone_file variable from vars/main.yml
+  notify: Restart Bind9
+
+# Configure reverse DNS zone file using a template, only for 'dns_servers'
+- name: Configure reverse DNS zone file
+  template:
+    src: db.reverse.17.16.172.in-addr.arpa.j2
+    dest: /etc/bind/db.reverse.17.16.172.in-addr.arpa
+  when: "'dns_servers' in group_names"
+  notify: Restart Bind9
+
+# Ensure the Bind9 service is running and enabled
+- name: Ensure Bind9 service is running and enabled
+  service:
+    name: bind9
+    state: started
+    enabled: yes
+

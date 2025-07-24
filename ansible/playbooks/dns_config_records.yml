@@ -1,0 +1,10 @@
+---
+- name: Configure DNS records on DNS servers
+  hosts: dns_servers
+  become: true
+  tasks:
+    - name: Configure DNS records
+      template:
+        src: /etc/ansible/roles/dns/templates/db.thesis.local.j2
+        dest: "{{ dns_zone_file }}"
+      notify: Restart Bind9

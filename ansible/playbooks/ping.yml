@@ -1,0 +1,7 @@
+---
+- name: ping
+  hosts: all
+  tasks:
+    - name: Example task
+      debug:
+        msg: "This is an example task"

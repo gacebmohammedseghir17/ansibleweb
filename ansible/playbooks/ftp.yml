@@ -1,0 +1,5 @@
+- name: Configure FTP Server
+  hosts: ftp_servers
+  roles:
+    - common
+    - ftp

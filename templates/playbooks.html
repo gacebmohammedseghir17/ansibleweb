@@ -5,49 +5,508 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manage Playbooks</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <style>
-        body { background-color: #f8f9fa; font-size: 1.4rem; font-family: "Times New Roman", Times, serif; }
-        .sidebar { background-color: #343a40; height: 100vh; padding: 2rem; color: white; position: fixed; width: 250px; font-size: 1.5rem; }
-        .sidebar a { color: #adb5bd; text-decoration: none; display: block; padding: 1.5rem 0; font-size: 1.5rem; }
-        .sidebar a:hover { color: white; background-color: #495057; padding-left: 15px; transition: all 0.3s ease; }
-        .dashboard-content { margin-left: 900px; padding: 5rem; text-align: center; }
-        .playbook-container { display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .playbook-list { max-width: 700px; width: 100%; }
-        .playbook-item { display: flex; justify-content: space-between; align-items: center; padding: 1rem; border-radius: 10px; background-color: white; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-bottom: 1rem; }
-        .playbook-item select { width: 50%; }
-        .btn-run { padding: 0.8rem 1.5rem; font-size: 1.2rem; border-radius: 8px; }
-        .dashboard-title { font-size: 3rem; font-weight: bold; margin-bottom: 2rem; }
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        .toast {
+            min-width: 250px;
+            margin-bottom: 10px;
+            background-color: white;
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+        .toast.show {
+            opacity: 1;
+        }
+        .toast.success {
+            border-left: 4px solid #28a745;
+        }
+        .toast.error {
+            border-left: 4px solid #dc3545;
+        }
     </style>
 </head>
 <body>
+<div class="toast-container"></div>
 <div class="d-flex">
     <div class="sidebar">
-        <h3 class="text-center">Ansible Dashboard</h3>
-        <a href="/">🏠 Home</a>
-        <a href="/playbooks">📜 Playbooks</a>
-        <a href="/logs">📝 Logs</a>
+        <div class="sidebar-header">
+            <h3 class="text-center logo">Ansible Dashboard</h3>
+            <div class="header-icons">
+                <button class="toggle-sidebar"><i class="fas fa-bars"></i></button>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/" class="nav-item">
+                <i class="fas fa-home"></i>
+                <span>Home</span>
+            </a>
+            <a href="/playbooks" class="nav-item active">
+                <i class="fas fa-scroll"></i>
+                <span>Playbooks</span>
+            </a>
+            <a href="/logs" class="nav-item">
+                <i class="fas fa-clipboard-list"></i>
+                <span>Logs</span>
+            </a>
+            <a href="/schedule" class="nav-item">
+                <i class="fas fa-calendar-alt"></i>
+                <span>Schedule</span>
+            </a>
+            <a href="/docs" class="nav-item">
+                <i class="fas fa-book"></i>
+                <span>Documentation</span>
+            </a>
+            <a href="/chatbot" class="nav-item">
+                <i class="fas fa-robot"></i>
+                <span>AI Chatbot</span>
+            </a>
+            <div class="nav-divider"></div>
+            <a href="/logout" class="nav-item">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </a>
+            <div class="user-info">
+                <i class="fas fa-user"></i>
+                <span>{{ current_user.username }} ({{ current_user.role }})</span>
+            </div>
+
+        </nav>
     </div>
     <div class="dashboard-content">
-        <h1 class="dashboard-title">Manage Playbooks</h1>
         <div class="playbook-container">
-            <h2>Available Playbooks:</h2>
-            <div class="playbook-list">
+            <div class="section-header d-flex justify-content-between align-items-center mb-4">
+                <h1 class="dashboard-title">Manage Playbooks</h1>
+                <div class="header-actions">
+                    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createPlaybookModal">
+                        <i class="fas fa-plus"></i> Create Playbook
+                    </button>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#importPlaybookModal">
+                        <i class="fas fa-file-import"></i> Import
+                    </button>
+                </div>
+            </div>
+
+
+
+            <div class="playbook-grid">
                 {% for playbook in playbooks %}
-                <div class="playbook-item">
-                    <span>{{ playbook }}</span>
-                    <select>
-                        <option>Select Server</option>
-                        {% for server in servers %}
-                        <option value="{{ server }}">{{ server }}</option>
-                        {% endfor %}
-                    </select>
-                    <button class="btn btn-primary btn-run">Run</button>
+                <div class="playbook-card">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h3><i class="fas fa-code-branch"></i> {{ playbook }}</h3>
+                            <div class="dropdown">
+                                <button class="btn btn-link" data-bs-toggle="dropdown">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="#" onclick="editPlaybook('{{ playbook }}')"><i class="fas fa-edit"></i> Edit</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="duplicatePlaybook('{{ playbook }}')"><i class="fas fa-copy"></i> Duplicate</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="exportPlaybook('{{ playbook }}')"><i class="fas fa-download"></i> Export</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item text-danger" href="#" onclick="deletePlaybook('{{ playbook }}')"><i class="fas fa-trash"></i> Delete</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="tags mt-2">
+                            <span class="badge bg-light text-dark">Ansible Playbook</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="description mb-3">Ansible playbook file: {{ playbook }}</div>
+                        <div class="form-group">
+                            <label><i class="fas fa-server"></i> Target Servers</label>
+                            <select class="form-select" multiple>
+                                {% for server in servers %}
+                                <option value="{{ server.id }}">{{ server.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="execution-info">
+                            <div class="info-item">
+                                <i class="fas fa-file-code"></i>
+                                <span>Playbook File</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn btn-primary" onclick="runPlaybook('{{ playbook }}')">
+                            <i class="fas fa-play"></i> Run
+                        </button>
+                        
+                    </div>
                 </div>
                 {% endfor %}
             </div>
-            <a href="/" class="btn btn-secondary mt-3">Back to Dashboard</a>
+
+            <div class="d-flex justify-content-between align-items-center mt-4">
+                <div class="page-info">
+                    Showing {{ page_start }} to {{ page_end }} of {{ total_playbooks }} playbooks
+                </div>
+                <div class="pagination">
+                    <button class="btn btn-outline-primary me-2" {{ 'disabled' if current_page == 1 }}>
+                        <i class="fas fa-chevron-left"></i> Previous
+                    </button>
+                    <button class="btn btn-outline-primary" {{ 'disabled' if current_page == total_pages }}>
+                        Next <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Create Playbook Modal -->
+        <div class="modal fade" id="createPlaybookModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Create New Playbook</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> <strong>Ansible Playbook Tips:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>Playbooks are YAML files that define automation tasks</li>
+                                <li>Use roles for reusable, modular content</li>
+                                <li>Templates allow you to use variables in configuration files</li>
+                                <li>Tasks are the individual actions to be performed</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Playbook Name</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="playbookName" placeholder="my_playbook">
+                                <span class="input-group-text">.yml</span>
+                            </div>
+                            <small class="text-muted">Use a descriptive name without spaces (e.g., install_apache)</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea class="form-control" id="playbookDescription" rows="2" placeholder="What does this playbook do?"></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Target Inventory</label>
+                            <select class="form-select" id="playbookInventory">
+                                <option value="all">All Hosts</option>
+                                {% for server in servers %}
+                                <option value="{{ server.name }}">{{ server.name }} ({{ server.ip }})</option>
+                                {% endfor %}
+                            </select>
+                            <small class="text-muted">Select which hosts this playbook will target</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Tags</label>
+                            <input type="text" class="form-control" id="playbookTags" placeholder="web, database, setup">
+                            <small class="text-muted">Comma-separated tags to help organize playbooks</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Ansible Components</label>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="includeRoles">
+                                        <label class="form-check-label" for="includeRoles">
+                                            <i class="fas fa-cubes"></i> Include Roles
+                                        </label>
+                                        <div class="form-text">Reusable collections of tasks, files, and templates</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="includeTemplates">
+                                        <label class="form-check-label" for="includeTemplates">
+                                            <i class="fas fa-file-code"></i> Include Templates
+                                        </label>
+                                        <div class="form-text">Jinja2 templates for configuration files</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="includeVars">
+                                        <label class="form-check-label" for="includeVars">
+                                            <i class="fas fa-list"></i> Include Variables
+                                        </label>
+                                        <div class="form-text">Define variables for your playbook</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3" id="rolesSection" style="display: none;">
+                            <label class="form-label">Roles to Include</label>
+                            <div class="mb-2">
+                                <div class="input-group mb-2">
+                                    <input type="text" class="form-control" id="roleName" placeholder="Role name">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="addRole()">Create Role</button>
+                                </div>
+                                <textarea class="form-control" id="roleContent" rows="3" placeholder="Role content (tasks, handlers, etc.)"></textarea>
+                            </div>
+                            <div id="rolesList" class="list-group mt-2">
+                                <!-- Roles will be added here -->
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3" id="templatesSection" style="display: none;">
+                            <label class="form-label">Templates to Include</label>
+                            <div class="mb-2">
+                                <div class="input-group mb-2">
+                                    <input type="text" class="form-control" id="templateName" placeholder="Template name">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="addTemplate()">Create Template</button>
+                                </div>
+                                <textarea class="form-control" id="templateContent" rows="3" placeholder="Template content (Jinja2)"></textarea>
+                            </div>
+                            <div id="templatesList" class="list-group mt-2">
+                                <!-- Templates will be added here -->
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3" id="varsSection" style="display: none;">
+                            <label class="form-label">Variables</label>
+                            <div class="mb-2">
+                                <div class="input-group mb-2">
+                                    <input type="text" class="form-control" id="varName" placeholder="Variable name">
+                                    <input type="text" class="form-control" id="varValue" placeholder="Value">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="addVariable()">Add Variable</button>
+                                </div>
+                            </div>
+                            <div id="variablesList" class="list-group mt-2">
+                                <!-- Variables will be added here -->
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Tasks</label>
+                            <div class="input-group mb-2">
+                                <input type="text" class="form-control" id="taskName" placeholder="Task name">
+                                <select class="form-select" id="taskModule" style="max-width: 150px;">
+                                    <option value="command">command</option>
+                                    <option value="shell">shell</option>
+                                    <option value="copy">copy</option>
+                                    <option value="file">file</option>
+                                    <option value="apt">apt</option>
+                                    <option value="yum">yum</option>
+                                    <option value="service">service</option>
+                                    <option value="template">template</option>
+                                    <option value="debug">debug</option>
+                                </select>
+                                <button class="btn btn-outline-secondary" type="button" onclick="addTask()">Add</button>
+                            </div>
+                            <div id="tasksList" class="list-group">
+                                <!-- Tasks will be added here -->
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Playbook Content</label>
+                            <textarea class="form-control" id="playbookContent" style="height: 200px; font-family: monospace; white-space: pre; overflow-x: auto;" placeholder="Enter your playbook YAML content here">---
+# Your playbook content here
+</textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="savePlaybook()">Create Playbook</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Import Playbook Modal -->
+        <div class="modal fade" id="importPlaybookModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Import Playbook</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Upload Playbook File</label>
+                            <input type="file" class="form-control" id="playbookFile" accept=".yml,.yaml">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Import Options</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="importVariables">
+                                <label class="form-check-label">Import Variables</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="importDependencies">
+                                <label class="form-check-label">Import Dependencies</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="importPlaybook()">Import</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/playbook-builder.js') }}"></script>
+<script>
+function showToast(message, type = 'success') {
+    const toastContainer = document.querySelector('.toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `
+        <div class="toast-header">
+            <strong class="me-auto">${type === 'success' ? 'Success' : 'Error'}</strong>
+            <button type="button" class="btn-close" onclick="this.closest('.toast').remove()"></button>
+        </div>
+        <div class="toast-body">${message}</div>
+    `;
+    toastContainer.appendChild(toast);
+    setTimeout(() => toast.classList.add('show'), 100);
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 5000);
+}
+
+function runPlaybook(id) {
+    const serverSelect = event.target.closest('.playbook-card').querySelector('select');
+    const selectedServers = Array.from(serverSelect.selectedOptions).map(opt => opt.value);
+    
+    if (selectedServers.length === 0) {
+        showToast('Please select at least one target server', 'error');
+        return;
+    }
+
+    const runButton = event.target;
+    const originalText = runButton.innerHTML;
+    runButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Running...';
+    runButton.disabled = true;
+
+    fetch('/run_playbook', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+            'playbook': id,
+            'server': selectedServers.join(',')
+        })
+    })
+    .then(response => response.text())
+    .then(html => {
+        document.querySelector('.dashboard-content').innerHTML = html;
+        showToast('Playbook executed successfully');
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Failed to run playbook: ' + error, 'error');
+    })
+    .finally(() => {
+        runButton.innerHTML = originalText;
+        runButton.disabled = false;
+    })
+}
+
+function schedulePlaybook(id) {
+    // Add AJAX call to schedule playbook
+    alert('Scheduling playbook ' + id);
+}
+
+function viewHistory(id) {
+    // Add AJAX call to view playbook history
+    alert('Viewing history for playbook ' + id);
+}
+
+function editPlaybook(id) {
+    // Add AJAX call to edit playbook
+    alert('Editing playbook ' + id);
+}
+
+function duplicatePlaybook(id) {
+    // Add AJAX call to duplicate playbook
+    alert('Duplicating playbook ' + id);
+}
+
+function exportPlaybook(id) {
+    // Add AJAX call to export playbook
+    alert('Exporting playbook ' + id);
+}
+
+function deletePlaybook(id) {
+    // Add AJAX call to delete playbook
+    if (confirm('Are you sure you want to delete this playbook?')) {
+        alert('Deleting playbook ' + id);
+    }
+}
+
+function savePlaybook() {
+    const name = document.getElementById('playbookName').value.trim();
+    const description = document.getElementById('playbookDescription').value.trim();
+    const tags = document.getElementById('playbookTags').value.trim();
+
+    if (!name) {
+        showToast('Please enter a playbook name', 'error');
+        return;
+    }
+
+    if (!name.endsWith('.yml') && !name.endsWith('.yaml')) {
+        name = name + '.yml';
+    }
+
+    const playbookData = {
+        name: name,
+        description: description,
+        tags: tags
+    };
+
+    fetch('/create_playbook', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(playbookData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Playbook created successfully');
+            document.getElementById('createPlaybookModal').querySelector('.btn-close').click();
+            // Refresh the playbooks list
+            window.location.reload();
+        } else {
+            showToast(data.error || 'Failed to create playbook', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Failed to create playbook', 'error');
+    });
+}
+
+function importPlaybook() {
+    // Add AJAX call to import playbook
+    alert('Importing playbook');
+}
+
+// Initialize the visual playbook builder
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize drag and drop interface
+    // Add event listeners for builder components
+});
+</script>
 </body>
 </html>
