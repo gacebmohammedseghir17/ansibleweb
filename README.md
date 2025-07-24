@@ -9,7 +9,7 @@ A comprehensive web-based management system for Ansible automation with integrat
 - **Playbook Management** - Execute and manage Ansible playbooks through web interface
 - **Real-time Monitoring** - Live server status and resource monitoring
 - **Task Scheduling** - Automated task scheduling with cron integration
-- **Interactive Chatbot** - AI-powered assistance for operations
+- **Interactive Chatbot** - AI-powered assistance for operations (requires LMStudio)
 - **Comprehensive Logging** - Detailed logs and statistics dashboard
 - **Health Monitoring** - System health checks and alerts
 
@@ -72,13 +72,36 @@ ansible-web/
    # Edit ansible/inventory/hosts.yml with your servers
    nano ansible/inventory/hosts.yml
    ```
+w
+4. **Setup LMStudio for AI Chatbot (Required for chatbot functionality)**
+   
+   a. **Download and Install LMStudio**
+   - Visit [LMStudio official website](https://lmstudio.ai/)
+   - Download the appropriate version for your operating system
+   - Install LMStudio following the installation wizard
+   
+   b. **Download a Language Model**
+   - Open LMStudio application
+   - Go to the "Discover" tab
+   - Search for and download a suitable model (recommended: Llama 2 7B or similar)
+   - Wait for the model to download completely
+   
+   c. **Start the Local Server**
+   - In LMStudio, go to the "Local Server" tab
+   - Select your downloaded model
+   - Click "Start Server" (default port: 1234)
+   - Ensure the server is running on `http://localhost:1234`
+   
+   d. **Verify API Connection**
+   - The chatbot will automatically connect to `http://localhost:1234/v1/chat/completions`
+   - If LMStudio is not running, the chatbot will show connection errors
 
-4. **Start the web application**
+5. **Start the web application**
    ```bash
    python app.py
    ```
 
-5. **Access the web interface**
+6. **Access the web interface**
    - URL: http://localhost:5000
    - Username: `admin`
    - Password: `admin`
@@ -136,6 +159,36 @@ ansible-web/
 - `POST /run_playbook` - Execute Ansible playbooks
 - `GET /api/scheduled_playbooks` - View scheduled tasks
 - `POST /api/schedule_playbook` - Schedule new tasks
+- `POST /api/chat` - AI chatbot interaction (requires LMStudio)
+
+### Chatbot Usage
+
+1. **Prerequisites**
+   - LMStudio must be running with a loaded model
+   - Local server should be active on port 1234
+
+2. **Access Chatbot**
+   - Navigate to `/chatbot` in the web interface
+   - Type your Ansible-related questions
+   - Get AI-powered assistance for automation tasks
+
+3. **Troubleshooting Chatbot Issues**
+   
+   **"Failed to connect to LM Studio" Error:**
+   - Ensure LMStudio application is running
+   - Verify the local server is started in LMStudio
+   - Check that port 1234 is not blocked by firewall
+   - Confirm a model is loaded and selected
+   
+   **Slow Response Times:**
+   - Use a smaller model (7B instead of 13B or larger)
+   - Ensure sufficient RAM is available
+   - Close other resource-intensive applications
+   
+   **Poor Response Quality:**
+   - Try different models in LMStudio
+   - Adjust temperature settings in the code (currently 0.7)
+   - Use more specific questions about Ansible tasks
 
 ## 🔒 Security
 

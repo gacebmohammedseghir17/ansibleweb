@@ -47,7 +47,7 @@ The ansible subfolder contains Ansible configuration files optimized for Debian 
 - Playbook execution and management
 - Real-time server monitoring
 - Task scheduling and cron management
-- Interactive chatbot for assistance
+- Interactive chatbot for assistance (requires LMStudio)
 - Comprehensive logging and statistics
 - Health check monitoring
 
@@ -72,9 +72,14 @@ The ansible subfolder contains Ansible configuration files optimized for Debian 
 ## Installation
 1. Install Python dependencies: pip install -r requirements.txt
 2. Configure Ansible inventory in ansible/inventory/hosts.yml
-3. Deploy agents on target Linux servers
-4. Run the main application: python app.py
-5. Access the web interface at http://localhost:5000
+3. Setup LMStudio for AI chatbot:
+   - Download and install LMStudio from https://lmstudio.ai/
+   - Download a language model (recommended: Llama 2 7B)
+   - Start the local server on port 1234
+   - Ensure the API is accessible at http://localhost:1234
+4. Deploy agents on target Linux servers
+5. Run the main application: python app.py
+6. Access the web interface at http://localhost:5000
 
 ## Usage
 1. Log in to the web interface using default credentials
