@@ -74,7 +74,9 @@ The ansible subfolder contains Ansible configuration files optimized for Debian 
 2. Configure Ansible inventory in ansible/inventory/hosts.yml
 3. Setup LMStudio for AI chatbot:
    - Download and install LMStudio from https://lmstudio.ai/
-   - Download a language model (recommended: Llama 2 7B)
+   - Download a language model:
+     * Recommended: Llama 2 7B Chat, Code Llama 7B Instruct, or Mistral 7B Instruct
+     * For better quality: Llama 2 13B Chat (requires more RAM)
    - Start the local server on port 1234
    - Ensure the API is accessible at http://localhost:1234
 4. Deploy agents on target Linux servers

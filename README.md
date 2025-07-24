@@ -83,7 +83,14 @@ w
    b. **Download a Language Model**
    - Open LMStudio application
    - Go to the "Discover" tab
-   - Search for and download a suitable model (recommended: Llama 2 7B or similar)
+   - **Recommended Models for Ansible Tasks:**
+     - **Llama 2 7B Chat** - Best balance of performance and resource usage
+     - **Code Llama 7B Instruct** - Excellent for technical/coding assistance
+     - **Mistral 7B Instruct** - Fast and efficient for general queries
+     - **Llama 2 13B Chat** - Higher quality responses (requires more RAM)
+   - **For Low-Resource Systems:** Use 7B models
+   - **For High-Performance Systems:** 13B+ models provide better responses
+   - **Note:** Any LLM compatible with OpenAI API format will work
    - Wait for the model to download completely
    
    c. **Start the Local Server**
